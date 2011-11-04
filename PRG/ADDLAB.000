@@ -1,0 +1,142 @@
+*
+* append address labels 
+*
+* ADDLAB  is to parse the E/L/S labels
+* ADDLAB1 is to parse the non E/L labels for inter office addresses
+*
+* 1.27.04: adjustment for the format changes
+* 1.05.05: reindex accordingly
+*
+parameter xfil
+set excl on
+clear
+
+yfil = "f:\dtp\dbf\rtran.dbf"
+if .not. file (yfil)
+   ytmp = "tmp.dbf"
+   create &ytmp
+   append blank
+   replace field_name with "FIELD"
+   replace field_type with "C"
+   replace field_len with 80
+   replace field_dec with 0 
+   create &yfil from &ytmp
+   use
+   erase &ytmp
+endif
+ 
+yfil = "f:\dtp\dbf\labels.dbf"
+yntx = "f:\dtp\dbf\labels.ntx"
+
+if .not. file (yfil)
+   ytmp = "tmp.dbf"
+   create &ytmp
+   append blank
+   replace field_name with "FKEY"
+   replace field_type with "C"
+   replace field_len with 10
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE1"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE2"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE3"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE4"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE5"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   create &yfil from &ytmp
+   use
+   erase &ytmp
+endif
+
+if .not. file (yntx)
+   select 0
+   use &yfil
+   * index on fkey to &yntx
+   index on recno() to &yntx     && 1.05.04: label file in order already
+   use &yfil index &yntx alias labels
+else
+   select 0
+   use &yfil index &yntx alias labels
+endif
+
+if pcount() > 0
+   if file (xfil)
+      ? "Adding Data..."
+      select 0
+      use f:\dtp\dbf\rtran alias rtran
+      zap
+      append from &xfil sdf
+   else
+      ? "Missing Data File..."
+      quit
+   endif
+else
+   select 0
+   use f:\dtp\dbf\rtran alias rtran
+endif
+
+select rtran
+go top
+i = 1
+l1 = ""
+l2 = ""
+l3 = ""
+l4 = ""
+l5 = ""
+* skip 1st eject
+if substr(field,1,1) = [1]
+   skip
+endif
+*
+* 01J       010E022
+* VER          AP
+* 2061 VALLEY VIEW DRIVE
+* ANN ARBOR     , MI 48105
+*
+do while .not. eof ()
+   if substr(field,1,1) = [1]
+      ? l1
+      * add labels
+      select labels
+      append blank
+      replace fkey with substr(l1,11)
+      replace fline1 with l1, fline2 with l2, fline3 with l3
+      replace fline4 with l4, fline5 with l5
+      commit
+      i = 1
+      l1 = ""
+      l2 = ""
+      l3 = ""
+      l4 = ""
+      l5 = ""
+      select rtran
+      skip
+      loop
+   endif
+   * read line 1, up to line 5
+   yfld = "l"+str(i,1)
+   &yfld = substr(field,2,50)
+   i = i + 1
+   select rtran 
+   skip
+enddo
+
+close data

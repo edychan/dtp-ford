@@ -1,0 +1,91 @@
+
+
+  DATE: 10/08/08            QUAL-EFFIC SERVICES INC.             INVOICE: W277
+  TIME: 23:18:39      END OF DAY REPORT - FEE DISTRIBUTION
+                           BRANCH #: 812   DATE: 10/03/08
+
+  TRANS CODE     DESCRIPTION                          # TRANS    TRANS TOTAL
+  ----------     ----------------------------------   ---------  -----------
+
+     01          PASSENGER PLATES                           0           0.00
+
+     03          COMMERCIAL PLATES                          0           0.00
+
+     21          TITLE APPLICATION FEE                      0           0.00
+
+     22          PLATE TRANSFER                            49         392.00
+
+                                                                      392.00
+                                                                  ==========
+
+ TOTAL RECORDS TRANSMITTED:     49
+ DATE: 10/08/08             QUAL-EFFIC SERVICES INC.                PAGE:   1
+ TIME: 23:18:39     END OF DAY REPORT - LICENSE PLATE TABS USED
+                    BRANCH #: 812   DATE: 10/03/08
+
+  TAB #      TRANS     PLATE #    VIN / TAG #                   REG. FEE 
+  -------    ------    -------    --------------------------    ---------
+
+
+  TOTAL LICENSE PLATE TABS USED:        0
+ DATE: 10/08/08             QUAL-EFFIC SERVICES INC.                PAGE:   1
+ TIME: 23:18:39     END OF DAY REPORT - DAILY TRANSACTION SUMMARY
+                    BRANCH #: 812   DATE: 10/03/08
+
+  TRAN CODE        VIN         PLATE   YR/MAKE      REG      TITLE    TOTAL  
+  ---- ----  ----------------- ------- ----------   -------  ------  --------
+
+  0001  G    1FMFU20558LA88197 BCT7993                 8.00    0.00      8.00
+  0002  G    1FMFK20588LA87678 BJF9300                 8.00    0.00      8.00
+  0003  G    1FMFU19578LA87694 BCV0584                 8.00    0.00      8.00
+  0004  G    1FMFK19578LA87698 BCV0708                 8.00    0.00      8.00
+  0005  G    1FMDK03W09GA01080 BCU1379                 8.00    0.00      8.00
+  0006  G    2FMDK53C79BA21689 BCT7469                 8.00    0.00      8.00
+  0007  G    1ZVHT82H295137059 BCT9311                 8.00    0.00      8.00
+  0008  G    1FMDK07W99GA01119 BCV0948                 8.00    0.00      8.00
+  0009  G    2FMDK53C39BA35704 BCT9901                 8.00    0.00      8.00
+  0010  G    1FMCU94G09KA55963 BCT7183                 8.00    0.00      8.00
+  0011  G    1ZVHT82H395137040 BCT8820                 8.00    0.00      8.00
+  0012  G    1ZVHT85H595137018 BCV1065                 8.00    0.00      8.00
+  0013  G    1FMDK07W49GA01058 BCV0360                 8.00    0.00      8.00
+  0014  G    1FMFU20568LA87799 BCV2508                 8.00    0.00      8.00
+  0015  G    1FMFU16538LA88247 BCV1198                 8.00    0.00      8.00
+  0016  G    2FMDK53C69BA35700 BCU5514                 8.00    0.00      8.00
+  0017  G    1FMFU20558LA87938 BCV0705                 8.00    0.00      8.00
+  0018  G    1FMFU20558LA87969 BCV0281                 8.00    0.00      8.00
+  0019  G    2FMDK53CX9BA35683 BCU5707                 8.00    0.00      8.00
+  0020  G    1FMFU20578LA87858 BCV1803                 8.00    0.00      8.00
+  0021  G    1FMFU16578LA87697 BCT8919                 8.00    0.00      8.00
+  0022  G    1FMFU19508LA88105 BCV1115                 8.00    0.00      8.00
+  0023  G    1FMFU17508LA87524 BCT7923                 8.00    0.00      8.00
+  0024  G    1FMFU20588LA88436 BCT7424                 8.00    0.00      8.00
+  0025  G    1FMFU18578LA87664 BCU6896                 8.00    0.00      8.00
+  0026  G    1FMFU17518LA87600 BCU4194 06 FORD         8.00    0.00      8.00
+  0027  G    1ZVHT85H095136181 BCT9770                 8.00    0.00      8.00
+  0028  G    2FMDK51C89BA31148 BCU1494                 8.00    0.00      8.00
+  0029  G    1FMDK07W09GA01087 BCV2384                 8.00    0.00      8.00
+  0030  G    2FMEK63C19BA24355 BCU0569                 8.00    0.00      8.00
+  0031  G    1FMFU16558LA88525 BCT6819                 8.00    0.00      8.00
+  0032  G    1FMFU19518LA87500 BCV0714                 8.00    0.00      8.00
+  0033  G    5LMFL28558LJ22403 BCU2734                 8.00    0.00      8.00
+  0034  G    4M2CU81729KJ07090 BCU1560                 8.00    0.00      8.00
+  0035  G    5LMFU28588LJ22425 BCU2606                 8.00    0.00      8.00
+  0036  G    1FMFU18578LA87860 BCU2613                 8.00    0.00      8.00
+  0037  G    1ZVHT82H895136174 BCU1837                 8.00    0.00      8.00
+  0038  G    1FMFU15598LA87556 BJF9338                 8.00    0.00      8.00
+  0039  G    1FMFU19588LA87767 BCT7338                 8.00    0.00      8.00
+  0040  G    1FMFU19558LA88052 BCV1973                 8.00    0.00      8.00
+  0041  G    1FMFK17518LA87960 BCU2659                 8.00    0.00      8.00
+  0042  G    2FMEK63C59BA35701 BCT9015                 8.00    0.00      8.00
+  0043  G    2FMDK51C09BA31435 BCU4511                 8.00    0.00      8.00
+  0044  G    1FMDK02W89GA01104 BCU1680                 8.00    0.00      8.00
+  0045  G    1ZVHT80N595137064 BCU6219                 8.00    0.00      8.00
+  0046  G    1ZVHT85H495134627 BCT8555                 8.00    0.00      8.00
+  0047  G    1FMFU18578LA88216 BCT8571                 8.00    0.00      8.00
+  0048  G    1FMFK205X8LA87990 BJG0063                 8.00    0.00      8.00
+  0049  G    2FMEK62CX9BA27594 BCU2584                 8.00    0.00      8.00
+
+                                                                       392.00
+                                                                   ==========
+
+  TOTAL RECORDS TRANSMITTED:       49

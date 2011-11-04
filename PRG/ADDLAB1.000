@@ -1,0 +1,139 @@
+*
+* append address labels for non E/L/S tag type
+*
+* 1.05.05: remember to reindex accordingly.
+*          normally this file is already in (recno()) order.  
+parameter xfil
+set excl on
+clear
+
+yfil = "f:\dtp\dbf\rtran.dbf"
+if .not. file (yfil)
+   ytmp = "tmp.dbf"
+   create &ytmp
+   append blank
+   replace field_name with "FIELD"
+   replace field_type with "C"
+   replace field_len with 80
+   replace field_dec with 0 
+   create &yfil from &ytmp
+   use
+   erase &ytmp
+endif
+ 
+yfil = "f:\dtp\dbf\labels.dbf"
+yntx = "f:\dtp\dbf\labels.ntx"
+
+if .not. file (yfil)
+   ytmp = "tmp.dbf"
+   create &ytmp
+   append blank
+   replace field_name with "FKEY"
+   replace field_type with "C"
+   replace field_len with 10
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE1"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE2"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE3"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE4"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   append blank
+   replace field_name with "FLINE5"
+   replace field_type with "C"
+   replace field_len with 50
+   replace field_dec with 0 
+   create &yfil from &ytmp
+   use
+   erase &ytmp
+endif
+
+if .not. file (yntx)
+   select 0
+   use &yfil
+   * index on fkey to &yntx
+   index on recno() to &yntx     && 1.05.04: label file in order already
+   use &yfil index &yntx alias labels
+else
+   select 0
+   use &yfil index &yntx alias labels
+endif
+
+if pcount() > 0
+   if file (xfil)
+      ? "Adding Data..."
+      select 0
+      use f:\dtp\dbf\rtran alias rtran
+      zap
+      append from &xfil sdf
+   else
+      ? "Missing Data File..."
+      quit
+   endif
+else
+   select 0
+   use f:\dtp\dbf\rtran alias rtran
+endif
+
+select rtran
+go top
+i = 1
+l1 = ""
+l2 = ""
+l3 = ""
+l4 = ""
+l5 = ""
+* skip 1st eject
+* *** INTER-OFFICE MAILING ***
+* KOSTIUK, J. W. (JOHN)
+* 01J       010D003
+* OFFICE: Executive Garage
+* BLD: WHQ    DROP:
+if substr(field,1,1) = [1]
+   skip
+endif
+do while .not. eof ()
+   if substr(field,1,1) = [1]
+      ? l3
+      * add labels
+      select labels
+      append blank
+      replace fkey with substr(l3,11)
+      * 1.05.04: new label file in order already 
+      replace fline1 with substr(l3,1,3)+" "+substr(l3,11)
+      replace fline2 with l2, fline3 with l4
+      replace fline4 with l5
+      commit
+      i = 1
+      l1 = ""
+      l2 = ""
+      l3 = ""
+      l4 = ""
+      l5 = ""
+      select rtran
+      skip
+      loop
+   endif
+   * read line 1, up to line 5
+   yfld = "l"+str(i,1)
+   &yfld = substr(field,2,50)
+   i = i + 1
+   select rtran 
+   skip
+enddo
+
+close data

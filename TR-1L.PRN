@@ -1,0 +1,187 @@
+
+!R! FSET 0p12h12v0s3b0t;CASS 1;COPY 1;CALL VTLE;EXIT,E;
+
+
+  Original Title Only                               04/01/09                        0.00
+
+    00       FORD                                        2LMDU68C57BJ12535         15.00
+
+
+  2 DOOR           000034        10                                   N             0.00
+
+  FORD MOTOR COMPANY                          000G000 61L0002                       0.00
+
+  VEHICLE TRANSPORT DEPT PO BOX 309                                                15.00
+  DEARBORN HEIGHTS      MI  48127                                          82
+
+
+  NONE                                 10/08/08    NONE
+                                     
+                          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  100808 A1 W282 804 0001    15.00             804W2820001
+
+!R! PAGE;EXIT,E;
+!R! FSET 0p12h12v0s3b0t;CASS 1;COPY 1;CALL VTLE;EXIT,E;
+
+
+  Original Title Only                               04/01/09                        0.00
+
+    07       LINCOLN                                     5LMFU28507LJ19615         15.00
+
+
+  4 DOOR           000055        10                                   N             0.00
+
+  FORD MOTOR COMPANY                          000G000 61L0003                       0.00
+
+  VEHICLE TRANSPORT DEPT PO BOX 309                                                15.00
+  DEARBORN HEIGHTS      MI  48127                                          82
+
+
+  NONE                                 10/08/08    NONE
+                                     
+                          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  100808 A1 W282 804 0002    15.00             804W2820002
+
+!R! PAGE;EXIT,E;
+!R! FSET 0p12h12v0s3b0t;CASS 1;COPY 1;CALL VTLE;EXIT,E;
+
+
+  Org Title/Renewal-Transfer       BCU5780          04/01/09                      258.00
+
+    07       LINCOLN                                     5LMFU28577LJ00155         15.00
+
+
+  4 DOOR           000055        10                                   N             0.00
+
+  FORD MOTOR CREDIT COMPANY               16L 006E410 74J0032                       0.00
+
+  20 OAK HOLLOW SUITE 350                                                         273.00
+  SOUTHFIELD            MI  48034                    9900402               63
+
+
+  NONE                                 10/08/08    NONE
+                                     
+                          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  100808 A1 W282 804 0003   273.00             804W2820003
+
+!R! PAGE;EXIT,E;

@@ -1,0 +1,29 @@
+
+Trans  Description
+Type
+  1    ORIGINAL TITLE ONLY
+  2    ORG TITLE/ORG PLATE      
+  3    ORG TITLE/TRANSFER PLATE 
+  4    ORG TITLE/RENEW-TRANSFER 
+  5    ORG PLATE ONLY           
+  6    RENEWAL PLATE            
+  7    TRANSFER PLATE           
+  9    RENEW-TRANSFER PLATE     
+
+if Reg. Fee = 0 .and. Transfer Fee = 0 .and. Title Fee > 0
+   Trans. Type = [1]
+elseif Reg. Fee > 0 .and. Transfer Fee = 0 .and. Title Fee > 0 .and. empty(Plate #)
+   Trans. Type = [2]
+elseif Reg. Fee = 0 .and. Transfer Fee > 0 .and. Title Fee > 0
+   Trans. Type = [3]
+elseif Reg. Fee > 0 .and. Transfer Fee = 0 .and. Title Fee > 0 .and. .not.empty(Plate #)
+   Trans. Type = [4]
+elseif Reg. Fee > 0 .and. Transfer Fee = 0 .and. Title Fee = 0 .and. empty(Plate #)
+   Trans. Type = [5]
+elseif Reg. Fee > 0 .and. Transfer Fee = 0 .and. Title Fee = 0 .and. .not.empty(Plate #)
+   Trans. Type = [6]
+elseif Reg. Fee = 0 .and. Transfer Fee > 0 .and. Title Fee = 0
+   Trans. Type = [7]
+elseif Reg. Fee > 0 .and. .not.empty(Plate #)
+   Trans. Type = [9]
+endif

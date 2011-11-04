@@ -1,0 +1,43 @@
+C>SEARCH /fdlyctr/ *.prg
+
+SEARCH  Ver 2.2
+Copyright (C) 1986, 1987, Solid Software, Inc. and Buzzwords International, Inc.
+
+Searching for "fdlyctr"
+ ... ignoring case.
+
+Found in line 89 of file D812FIN.PRG:
+      * if rasys->fdlyctr > 0
+
+Found in line 90 of file D812FIN.PRG:
+      *   if ydlyctr - rasys->fdlyctr > 1
+
+Found in line 128 of file D812FIN.PRG:
+   * if ydlyctr > fdlyctr
+
+Found in line 130 of file D812FIN.PRG:
+   *   replace fdlyctr with ydlyctr
+
+Found in line 96 of file D812INT.PRG:
+      * if rasys->fdlyctr > 0
+
+Found in line 97 of file D812INT.PRG:
+      *   if ydlyctr - rasys->fdlyctr > 1
+
+Found in line 135 of file D812INT.PRG:
+   * if ydlyctr > fdlyctr
+
+Found in line 137 of file D812INT.PRG:
+   *   replace fdlyctr with ydlyctr
+
+Found in line 200 of file DTPP.PRG:
+         if rasys->fdlyctr > 0
+
+Found in line 201 of file DTPP.PRG:
+            if ydlyctr - rasys->fdlyctr > 1
+
+Found in line 239 of file DTPP.PRG:
+      if ydlyctr > fdlyctr
+
+Found in line 241 of file DTPP.PRG:
+         replace fdlyctr with ydlyctr

@@ -1,0 +1,265 @@
+*
+* 1. append text file containing renewal (tr-1c) info
+* 2. process into rtran 
+* 3. process info into renewal (same stru as radtrh)
+*    process into ravin (vin chart)
+*
+* Important notes:
+* step 1. copy text file from diskette onto a directory
+* step 2. del renewal.ntx 
+* step 3. run addnew f:\dtp\xxx\filename
+* step 4. reindex renewal 
+* ** may want to automate the above process
+* 
+* Revision:
+* 01.12.98: (edc) skip record with reg. fee = 0
+*           which implies plate has been renewed already.
+* 02.24.00: set ftr11 = .t. so the address will print correctly
+* 02.25.02: note:
+*    new index scheme: for E/L tag, index on substr(fref,5,7)
+*                      otherwise, assume file is in order; index on recno() 
+* 10.01.03: renewal fee increase by $3 (see calc_fee)
+* 01.11.05: ** problem process commercial plate on passenger vehicle
+*   (need to filter out first and process differnetly...)
+* 01.30.06: 7 digit plate #
+parameter xfil
+
+set excl on
+clear
+
+yfil = "f:\dtp\dbf\rtran.dbf"
+if .not. file (yfil)
+   ytmp = "tmp.dbf"
+   create &ytmp
+   append blank
+   replace field_name with "FIELD"
+   replace field_type with "C"
+   replace field_len with 80
+   replace field_dec with 0 
+   create &yfil from &ytmp
+   use
+   erase &ytmp
+endif
+ 
+yfil = "f:\dtp\dbf\renewal.dbf"
+yntx = "f:\dtp\dbf\renewal.ntx"
+
+if .not. file (yfil)
+   use f:\dtp\dbf\radtr
+   copy stru to &yfil
+   use
+endif
+
+if .not. file (yntx)
+   select 0
+   use &yfil
+   index on fvin to &yntx
+   use &yfil index &yntx alias renewal  
+else
+   select 0
+   use &yfil index &yntx alias renewal
+endif
+
+if pcount() > 0
+   if file (xfil)
+      ? "Adding Data..."
+      select 0
+      use f:\dtp\dbf\rtran alias rtran
+      zap
+      append from &xfil sdf
+      ? "Completed..."
+   else
+      ? "Missing Data File..."
+      quit
+   endif
+else
+   select 0
+   use f:\dtp\dbf\rtran alias rtran
+endif
+* 01.09.04: include wt. fee
+yfil = "f:\dtp\dbf\rawtfee"
+select 0
+use &yfil alias rawtfee
+
+yfil = "f:\dtp\dbf\ravalue"
+select 0
+use &yfil index &yfil alias ravalue
+
+yfil = "f:\dtp\dbf\rabody"
+select 0
+use &yfil index &yfil alias rabody
+
+yfil = "f:\dtp\dbf\ravin"
+select 0
+use &yfil index &yfil alias ravin
+
+select rtran 
+go top
+do while .not. eof ()
+   skip 3
+   * line 4
+   * 12/10/96: edc take out blanks for plate #
+   * xplate = strtran(substr(field,25,6)," ","")
+   xplate = strtran(substr(field,25,7)," ","")      && 01.30.06
+   skip 2
+   * line 6 - add to vin chart
+   xyear = substr(field,3,2)
+   xmake = substr(field,8,10)
+   xstyle = substr(field,22,3)
+   xstyle = substr(strtran(alltrim(xstyle),"/",""),1,2)
+   skip 2
+   * line 8
+   xvin = substr(field,3,17)
+   xmsrp = val(substr(field,22,7))
+   xmsrp = if(xmsrp>999, xmsrp, xmsrp*1000)
+   xtreg = val(substr(field,33,6))
+   skip 2
+   * line 10
+   xref = substr(field,6,3)+[ ]+substr(field,11,7)+[ ]+substr(field,20,3)
+   skip 2
+   * line 12
+   xowner = substr(field,3,30)
+   * end of parsing
+   if .not. empty(xvin)
+      select rabody
+      seek xstyle
+      if eof ()
+         xfee = ""
+      else
+         xfee = rabody->ftype
+      endif
+
+      select ravin
+      seek substr(xvin,1,8)+substr(xvin,10,1)
+      if eof ()
+         append blank       
+         replace fvin with substr(xvin,1,8)+substr(xvin,10,1)
+         replace fmake with xmake
+         replace fmsrp with xmsrp, fstyle with xstyle    && 03/24/97:edc
+         replace fyear with xyear, fdesc with "CVMS-R"
+         replace ffee with xfee
+         commit 
+         unlock
+      endif
+   
+      xreg = calc_fee (xmsrp, xyear)    && 01.08.2003
+
+      if xreg >= 0         && 01.12.98 edc
+         select renewal
+         seek xvin
+         if eof () 
+            ? "Adding -> " + xvin + " : "+ str(xmsrp,10,2) + " " + str(xreg,8,2)
+            append blank
+            * replace fbranch with 
+            * replace fdate with
+            replace fplate with xplate
+            replace fpplate with xplate
+            * replace fseq with
+            * replace ftab with str(xmsrp,6)   && temporary
+            replace fvin with xvin
+            replace faction with [6]
+            * replace fclerk with
+            * replace fcontrol with
+            * replace floc with
+            replace fmonth with 12
+            replace fowner with xowner
+            replace fref with xref
+            replace freg with xreg
+            replace fstate with [MI]
+            * replace ftax with
+            * replace ftfee with xtreg      && temporary
+            * replace ftitle with
+            replace ftotal with xreg
+            replace ftr11 with .t.
+         endif      
+      endif
+   endif
+   select rtran 
+   skip 6
+enddo
+
+close all
+
+*****************************************
+function calc_fee
+* 10.01.03: reg fee increase by $3
+parameter xmsrp, xyear
+private y1, y2, y3, yfld, ylv, yfee, ymonth, yxtra
+
+ymonth = 12   && for renewal only
+yxtra = 3     && 10.01.03
+yfee = 0
+if xmsrp > 8000     && 09.17.97
+   * calculate level
+   y2 = val(substr(dtos(date()),1,4))    && taken year 2000 into account
+   y3 = val(xyear)
+   y3 = if(y3>=50, y3+1900, y3+2000)
+   y1 = if(y2 - y3 >= 3, 3, y2 - y3)
+   ylv = if(y1 <= 0, [0], str(y1,1))
+   if xmsrp > 99999
+      do case 
+      case ylv = [0]
+         yfee = f_round (xmsrp * .005, 0)           && 12 month base fee
+      case ylv = [1]
+         yfee = f_round (xmsrp * .005, 0)
+         yfee = f_round (yfee * .9, 0)
+      case ylv = [2]
+         yfee = f_round (xmsrp * .005, 0)
+         yfee = f_round (yfee * .9, 0)
+         yfee = f_round (yfee * .9, 0)
+      case ylv = [3]
+         yfee = f_round (xmsrp * .005, 0)
+         yfee = f_round (yfee * .9, 0)
+         yfee = f_round (yfee * .9, 0)
+         yfee = f_round (yfee * .9, 0)
+      otherwise                                     && error: just in case
+         yfee = 0
+      endcase
+      yfee = f_round (yfee / 12 * ymonth, 0)   && prorate to ymonth
+      yfee = yfee + 5                            && final fee
+      yfee = yfee + yxtra
+   else
+      xmsrp = int(xmsrp/1000) * 1000
+      yfld = "ravalue->f"+strtran(str(ymonth,2)," ","")
+      select ravalue
+      seek str(xmsrp,5)+ylv
+      if eof ()
+         yfee = 0
+      else
+         yfee = &yfld
+         yfee = yfee + yxtra
+      endif             
+   endif                  
+   return yfee
+else                          && 01.09.04: include wt. fee calc for wt>5000
+   if xmsrp <= 5000
+      do case
+      case xmsrp > 0 .and. xmsrp <=4000
+         yfee = 39.00
+      case xmsrp >=4001 .and. xmsrp <=4500
+         yfee = 44.00
+      case xmsrp >=4501 .and. xmsrp <=5000
+         yfee = 49.00
+      endcase
+   else
+      select rawtfee
+      locate for xmsrp >= fwt1 .and. xmsrp <= fwt2
+      if .not. eof ()
+         yfee = rawtfee->fx12fee
+      endif
+   endif
+   if yfee = 0      && over 8000 lb
+      return (0)
+   else
+      return (yfee + yxtra)
+   endif
+endif
+
+return (0)
+
+***************************
+function f_round
+parameter xnum, xdec
+
+return (round(xnum - .01, xdec))
+

@@ -1,0 +1,187 @@
+*
+* view/print history record
+*
+* changes:
+* 09.17.97: print msrp instead of weight for pickup/van under 5000 lb
+*
+private yarray [3]
+f_clrscn ("DTP/MI - Print/View History Record")
+
+do while .t.
+   yarray[1] = " VIN.......... "
+   yarray[2] = " Plate #...... "
+   yarray[3] = " TAB #........ "
+   yptr = 1
+   yret = f_pick_a (02, 05, "", "", yarray, 3, yptr)
+   if yret = 0
+      exit
+   endif
+   if yret = 1
+      yval = space (8)
+   elseif yret = 2
+      yval = space (6)
+   else
+      yval = space (7)
+   endif
+   @ 02, 02 clear to 02, 30
+   @ 02, 02 say yarray [yret] get yval picture replicate ([!], len (yval))
+   if f_rd ()	= 27
+      exit
+   endif
+   yval = upper (alltrim (yval))
+   set softseek on
+   yfnd = .f.
+   do case
+   case yret = 1
+      f_use ("radtrh", 2)
+      seek yval
+   case yret = 2
+      f_use ("radtrh", 3)
+      seek yval
+   case yret = 3
+      f_use ("radtrh", 4)
+      seek yval
+   endcase
+   set softseek off
+   if eof()
+      go top
+   endif
+   if f_pick_f (04, 05, "", "컴컴컴 VIN 컴컴컴Code컴Plate컴훂ab컴컴횭ranch컴Id컴Date컴컴Total",  ;
+             "fvin+[  ]+faction+[  ]+fplate+[  ]+ftab+[ ]+fbranch+[ ]+fseq+[ ]+"+    ;
+             "fclerk+[ ]+dtoc(fdate)+[ ]+str(ftotal,6,2)")
+      select radtrh
+      set order to 1
+      do rdtp6a
+      exit
+   endif
+enddo
+
+close data
+
+***********************
+procedure rdtp6a
+private yresp, xtr11
+
+* print routine
+f_box (01, 02, 04, 78)
+@ 02, 04 say "Printer.......      [LPT1/LPT2/LPT3]"
+@ 03, 04 say "Form..........      [1] TR11 [2] TR11-D [3] TR11-T"
+xprt = [LPT1]
+xtr11 = [1]
+@ 02, 19 get xprt pict "!!!!" valid f_valid (xprt $ "LPT1;LPT2;LPT3")
+@ 03, 19 get xtr11 pict "9" valid f_valid (xtr11 $ "123")
+if f_rd () = 27
+   return
+endif
+
+if f_popup ("Press <Enter> to Begin or <Esc> to Stop Printing...", .t.) = 27
+   f_popback ()
+   return
+endif
+f_popback ()
+
+* set up transaction table
+private ydesc [9]
+
+ydesc [1] = "Original Title Only"
+ydesc [2] = "Original Title/Original Plate"
+ydesc [3] = "Original Title/Transfer Plate"
+ydesc [4] = "Original Title/Renewal-Transfer"
+ydesc [5] = "Original Plate Only"
+ydesc [6] = "Renewal Plate Only"
+ydesc [7] = "Transfer Plate Only"
+ydesc [8] = "                   "
+ydesc [9] = "Renewal-Transfer Plate Only"
+
+* set up condition
+xdate = radtrh->fdate
+y1 = dtoc (xdate)
+xfd = substr(y1,1,2)+substr(y1,4,2)+substr(y1,7,2)
+xjdate = jdate (xdate)
+
+xformno = 1           && only 1 form 
+xtyp = "R"            && reprint
+
+f_use ("raform")
+f_use ("rabody")
+f_use ("ravin")
+select radtrh
+set console off
+set print on
+set printer to &xprt
+yfrmlg = "chr(27)+chr(65)+chr(12)+chr(27)+chr(67)+chr(66)"
+?? &yfrmlg
+begin sequence
+   yrow = 0
+   ybuffer = space (132)
+   select ravin
+   seek substr(radtrh->fvin,1,8)+substr(radtrh->fvin,10,1)
+   if ravin->ffee = [01]
+      * 12/11/96
+      *xexp = [04/01/]+substr(dtoc(xdate+radtrh->fmonth*30),7,2)
+      yy1 = val(substr(dtoc(xdate),7,2))
+      if substr(dtoc(xdate),1,2) = [12]    && for month = dec
+          yy1 = yy1 + 2
+      else
+          yy1 = yy1 + 1
+      endif
+      yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+      xexp = [04/01/]+strtran(str(yy1,2)," ","0")
+      * 04/16/96
+      if ravin->fmsrp > 29999
+         xmsrp = str(ravin->fmsrp,6,0)
+      else
+         xmsrp = str(int(ravin->fmsrp/1000),6,0)
+      endif
+   else
+      yy1 = val(substr(dtoc(xdate),7,2))
+      if substr(dtoc(xdate),1,2) $ [10,11,12]    && for month = oct,nov,dec
+          yy1 = yy1 + 2
+      else
+          yy1 = yy1 + 1
+      endif
+      yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+      xexp = [02/28/]+strtran(str(yy1,2)," ","0")
+      * 09.17.97
+      if ravin->fmsrp > 29999
+         xmsrp = str(ravin->fmsrp,6,0)
+      elseif ravin->fmsrp > 10000
+         xmsrp = str(int(ravin->fmsrp/1000),6,0)
+      else
+         xmsrp = str(ravin->fmsrp,6,0)
+      endif
+      *
+   endif
+    * print form uses rabody
+   select rabody
+   seek ravin->fstyle
+    * "1" should be station id
+   xid = radtrh->fclerk+"1"+xjdate+radtrh->fbranch+radtrh->fseq
+   xseq = radtrh->fbranch+xjdate+radtrh->fseq
+   *
+   select raform
+   seek str (xformno, 2) + xtyp
+   do while .not. eof () .and. ffrmno = xformno .and. ffrmtyp = xtyp
+      do while frow > yrow
+         ? trim (ybuffer)
+         ybuffer = space (132)
+         yrow = yrow + 1
+      enddo
+       yfld = ffield
+      ypict = trim (fpict)
+      yfld = transform (&yfld, ypict)
+      ybuffer = stuff (ybuffer, fcol + 1, len (yfld), yfld)
+      skip
+   enddo
+   ? trim (ybuffer)
+   eject
+end
+
+set print off
+set printer to
+set console on
+set device to screen
+select radtrh
+return
+
+

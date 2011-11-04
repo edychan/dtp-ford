@@ -1,0 +1,137 @@
+*************************************************************************
+* DTP - communication program
+*************************************************************************
+f_clrscn ("DTP/MI - Send File")
+f_use ("rasys")
+xpost = fpostdate                 && last posted date
+use
+
+f_box (01, 02, 04, 78)
+@ 02, 04 say "Branch #......"
+@ 02, 50 say "Last Posted on.... " + dtoc(xpost)
+@ 03, 04 say "Date.........."
+
+xbranch = gloc       && branch for qual-effic  804
+xdate = date()
+do while .t.
+   @ 02, 19 get xbranch pict "999" 
+   @ 03, 19 get xdate valid f_y2k(@xdate)
+   if f_rd () = 27
+      return
+   endif
+   yret = f_confirm ("[C]ontinue  [E]dit  [Q]uit ","CEQ")
+   if yret = "C"
+      ypath = "f:\dtp\comm\"
+      xfil = xbranch + jdate(xdate) + ".txt"
+      if file (ypath+xfil)
+         exit
+      else
+        f_valid (.f., "Missing Send File...")
+        loop
+      endif    
+   elseif yret = "Q"
+      return
+   endif
+enddo
+
+* create script file to send thru procomm
+yfil = "f:\dtp\comm\sos.asp"
+set device to print
+set printer to &yfil
+setprc (0,0)
+yln = 0
+@yln, 0 say [TRANSMIT "^M^M"                ;  Transmit 2 Carriage returns]
+yln = yln + 1
+@yln, 0 say [WAITFOR "name:"                ;  Wait for first name prompt...]
+yln = yln + 1
+@yln, 0 say [PAUSE 1                        ;  and wait a second...]
+yln = yln + 1
+@yln, 0 say [TRANSMIT "DTP^M"               ;  Send first name]
+yln = yln + 1
+@yln, 0 say [WAITFOR "name:"                ;  Wait for last name prompt...]
+yln = yln + 1
+@yln, 0 say [PAUSE 1                        ;  and wait a second...]
+yln = yln + 1
+@yln, 0 say [TRANSMIT "MI^M"                ;  Send last name]
+yln = yln + 1
+@yln, 0 say [WAITFOR "(Y/N)?"               ;  Wait for verification prompt...]
+yln = yln + 1
+@yln, 0 say [PAUSE 1                        ;  wait a second...]
+yln = yln + 1
+@yln, 0 say [TRANSMIT "Y"                   ;  Send "YES"]
+yln = yln + 1
+@yln, 0 say [WAITFOR "Password:"            ;  Wait until board asks for password]
+yln = yln + 1
+@yln, 0 say [PAUSE 1                        ;  wait a second longer...]
+yln = yln + 1
+@yln, 0 say [TRANSMIT "OS^M"                ;  Send my password]
+yln = yln + 1
+@yln, 0 say [L2:                            ;  only do this loop 5 times, otherwise abort]
+yln = yln + 1
+@yln, 0 say [   WAITFOR "choice?"           ;  Wait until board asks for a choice]
+yln = yln + 1
+@yln, 0 say [   PAUSE 1                     ;  wait a second longer...]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT "U"                ;  Send "U" for upload]
+yln = yln + 1
+@yln, 0 say [   WAITFOR "choice?"           ;  Wait until board asks for a protocol choice]
+yln = yln + 1
+@yln, 0 say [   PAUSE 1                     ;  wait a second longer...]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT "Y"                ;  Send "Y" for YMODEM ]
+yln = yln + 1
+@yln, 0 say [   WAITFOR "name?"             ;  Wait until board asks for a file name]
+yln = yln + 1
+@yln, 0 say [   PAUSE 1                     ;  wait a second longer...]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT ] + ["]+ xfil + [^M"]
+yln = yln + 1
+@yln, 0 say [   WAITFOR "ption:"            ;  Wait until board asks for a description]
+yln = yln + 1
+@yln, 0 say [   PAUSE 1                     ;  wait a second longer...]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT ]+["Branch ]+xbranch+[ ^M"    ;  Send description]
+yln = yln + 1
+@yln, 0 say [   WAITFOR "transfer proc"     ;  Wait until board is ready for transfer]
+yln = yln + 1
+@yln, 0 say [   PAUSE 1]
+yln = yln + 1
+@yln, 0 say [   SENDFILE BYMODEM ] + ["] + xfil + ["]
+yln = yln + 1
+@yln, 0 say [   IF FAILURE                  ;  if transfer failed, then retry...]
+yln = yln + 1
+@yln, 0 say [      GOTO L2]
+yln = yln + 1
+@yln, 0 say [   ENDIF]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT "^M"               ; transmit CR, just in case...]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT "^M"               ; transmit CR, just in case...]
+yln = yln + 1
+@yln, 0 say [   WAITFOR "choice"            ;  Wait until board asks for a choice]
+yln = yln + 1
+@yln, 0 say [   PAUSE 1                     ;  wait a second longer...]
+yln = yln + 1
+@yln, 0 say [   TRANSMIT "G^M"              ;  Send "G" for Goodbye]
+yln = yln + 1
+@yln, 0 say [   PAUSE 3]
+yln = yln + 1
+@yln, 0 say [   HANGUP]
+yln = yln + 1
+@yln, 0 say [QUIT                           ;  return to SOS application]
+
+set printer to
+set console on
+set print off
+set device to screen
+
+
+yret = swpruncmd ("pcplus", 0, "f:\dtp\comm", "f:\dtp")
+
+if .not. yret
+   y1 = swperrmaj ()
+   y2 = swperrmin ()
+   f_valid (.f., "Error: " + y1 + " " + y2)
+endif
+
+

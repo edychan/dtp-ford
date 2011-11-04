@@ -1,0 +1,39 @@
+PRINT [!R! SMB 7;UNIT C;CASS 1;COPY 1;EXIT;]
+PRINT [!R! FONT 62; MAP 0,-.015; CALL VREG; EXIT,E;]
+PRINT
+PRINT
+PRINT space(6)+[Plate #,7]+space(15)+[expiration,6]+space(39)+[Plate #,7]+space(16)+[expiration,6]
+PRINT space(3)+[Transfer Plate Only,35]+space(31)+[Transfer Plate Only,35]
+PRINT space(3)+[year,2]+space(6)+[make,15]+space(5)+[body,15]+space(23)+[year,2]+space(6)+[make,15]+space(5)+[body,15]
+PRINT space(12)+[vin,17]+space(24)+[msrp,6]+space(22)+[vin,17]+space(26)+[msrp,6]
+PRINT space(46)+[county,15]+space(55)+[county,15]
+PRINT space(3)+[ref #,30)+[control #]+space(32)+[ref #,30]
+PRINT
+PRINT space(3)+[owner,30]+space(36)+[owner,30]
+PRINT
+PRINT space(3)+[address,35]+space(31)+[address,35]
+PRINT space(3)+[city,20]+space(2)+[state,2]+space(2)+[zip,10]+space(30)+[city,20]+space(2)+[state,2]+space(2)+[zip,10]
+PRINT space(53)+str(radtrh->ftotal,6,2)+space(65)+str(radtrh->ftotal,6,2) 
+PRINT space(5)+[date,6]+space(1)+[clerk,2]+[julian date,4]+space(1)+[812]+space(1)+[seq #,4]+space(4)+[8.00]+space(31)+ ;
+      [date,6]+space(1)+[clerk,2]+[julian date,4]+space(1)+[812]+space(1)+[seq #,4]+space(4)+[8.00]
+PRINT                                                                                                           
+PRINT
+PRINT
+PRINT
+PRINT [!R! EXIT,E;]
+PRINT [!R! FSET 0p12h12v0s3b0t; CALL VREG; EXIT,E;]
+PRINT space(5)+[plate #,7]+space(1)+[01 or 03]+space(8)+[expiration,6]+space(1)+[12]
+PRINT space(2)+[Transfer Plate Only]
+PRINT 
+PRINT space(2)+[year,2]+space(6)+[make,15]+space(5)+[body,15]
+PRINT space(9)+[vin,17]+space(14)+[msrp,6]
+PRINT
+PRINT space(31)+[county,12)+space(1)+[82]
+PRINT space(2)+[owner,35]
+PRINT
+PRINT space(2)+[address,35]
+PRINT space(2)+[city,20]+space(2)+[state,2]+space(2)+[zip,10]+space(2)+[8.00]
+PRINT
+PRINT space(2)+[date,6]+space(1)+[clerk,2]+[julian date,4]+space(1)+[812]+space(1)+[seq #,4]+space(4)+[8.00]+space(4)
+PRINT
+PRINT [!R! PAGE;CASS 1;EXIT,E;]

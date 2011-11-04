@@ -1,0 +1,264 @@
+*************************************
+* dtp - print computer form
+*
+* Revisions
+* 09/11/96: add 10th digit (model year) to vin chart
+* 05/29/96: TR11-T
+*           form # is 3 (note: form # 2 is used for renewals processing) 
+* 09.17.97: print msrp for pickup/van weigh < 5000 lb
+*
+*************************************
+f_clrscn ("DTP - PRINT FORM TR11/TR11-D/TR11-T")
+private xformno, yrow, ybuffer, yfld, ypict, ysel, xmsrp
+
+* only one user print at a time
+
+set excl on
+f_use ("radtrp")
+set excl off
+go top
+if eof ()
+   f_valid (.f., "All Printed...")
+   set filter to
+   close data
+   return
+endif
+
+* set xtr11d, xtr11t
+select radtrp
+set filter to ftr11=.f.
+go top
+if eof ()
+   xtr11d = .f.
+else
+   xtr11d = .t.
+endif
+set filter to
+*
+set filter to upper(substr(fref,8,1)) = "T"
+go top
+if eof ()
+   xtr11t = .f.
+else
+   xtr11t = .t.
+endif
+set filter to
+
+do case
+   case .not. xtr11d .and. .not. xtr11t
+      f_box (01, 02, 04, 78)
+      @ 02, 04 say "Printer.......      [LPT1/LPT2/LPT3]"
+   case xtr11d .and. .not. xtr11t
+      f_box (01, 02, 05, 78)
+      @ 02, 04 say "Printer.......      [LPT1/LPT2/LPT3]"
+      @ 03, 04 say "Form..........      [1] TR11"
+      @ 04, 04 say "                    [2] TR11-D"
+   case .not. xtr11d .and. xtr11t
+      f_box (01, 02, 05, 78)
+      @ 02, 04 say "Printer.......      [LPT1/LPT2/LPT3]"
+      @ 03, 04 say "Form..........      [1] TR11"
+      @ 04, 04 say "                    [2] TR11-T"
+   case xtr11d .and. xtr11t
+      f_box (01, 02, 06, 78)
+      @ 02, 04 say "Printer.......      [LPT1/LPT2/LPT3]"
+      @ 03, 04 say "Form..........      [1] TR11"
+      @ 04, 04 say "                    [2] TR11-D"
+      @ 05, 04 say "                    [3] TR11-T"
+endcase
+xprt = [LPT3]
+xtr11 = [1]
+xmsrp = []
+xloc = space (3)
+xbranch = space (3)
+xdate = date()
+xstart = 0
+xend = 0
+
+do while .t.
+   @ 02, 19 get xprt pict "!!!!" valid f_valid (xprt $ "LPT1;LPT2;LPT3")
+   if xtr11d .or. xtr11t
+      @ 03, 19 get xtr11 pict "9" valid f_valid (xtr11 $ "1;2;3") 
+   endif
+   if f_rd () = 27
+      set filter to
+      close data
+      return
+   endif
+   yret = f_confirm ("Are You Ready to Print [Y/N] ? ","YN")
+   if yret = "N"
+      set filter to
+      close data
+      return
+   else
+      exit
+   endif
+enddo
+
+* print routine
+xformno = 1           && default form # for tr11 and tr11d
+xtyp = "O"            && original print
+
+select radtrp
+do case
+case xtr11 = [1]
+   set filter to ftr11=.t. .and. upper(substr(fref,8,1)) <> "T"
+case xtr11 = [2] .and. xtr11d
+   set filter to ftr11=.f. .and. upper(substr(fref,8,1)) <> "T"
+case xtr11 = [2] .and. xtr11t
+   set filter to upper(substr(fref,8,1)) = "T"
+   xformno = 3           && form # for tr11t
+   xtyp = "O"            && original print
+case xtr11 = [3]
+   set filter to upper(substr(fref,8,1)) = "T"
+   xformno = 3           && form # for tr11t
+   xtyp = "O"            && original print
+otherwise
+   set filter to ftr11 = .t. .and. upper(substr(fref,8,1)) <> "T"
+endcase
+*
+go top
+if eof ()
+   f_valid (.f., "All Printed...")
+   set filter to
+   close data
+   return
+endif
+
+if f_popup ("Press <Enter> to Begin or <Esc> to Stop Printing...", .t.) = 27
+   close data
+   return
+endif
+f_popup ("Please Wait While Printing...")
+
+* set up transaction table
+private ydesc [9]
+
+ydesc [1] = "Original Title Only"
+ydesc [2] = "Original Title/Original Plate"
+ydesc [3] = "Original Title/Transfer Plate"
+ydesc [4] = "Original Title/Renewal-Transfer"
+ydesc [5] = "Original Plate Only"
+ydesc [6] = "Renewal Plate Only"
+ydesc [7] = "Transfer Plate Only"
+ydesc [8] = "                   "
+ydesc [9] = "Renewal-Transfer Plate Only"
+
+y1 = dtoc (radtrp->fdate)
+xfd = substr(y1,1,2)+substr(y1,4,2)+substr(y1,7,2)
+
+f_use ("raform")
+f_use ("rabody")
+f_use ("ravin")
+f_use ("radtrh")
+
+select radtrp
+set console off
+set print on
+set printer to &xprt
+yfrmlg = "chr(27)+chr(65)+chr(12)+chr(27)+chr(67)+chr(66)"
+?? &yfrmlg
+begin sequence
+   do while .not. eof () 
+      key = inkey ()
+      if key = 27
+         set console on
+         set print off
+         if f_confirm ("Do you want to quit ? ", "YN") = "N"
+            set console off
+            set print on
+         else
+            exit
+         endif
+      endif
+
+      select radtrh
+      seek radtrp->fbranch+dtos(radtrp->fdate)+radtrp->fseq
+      if eof ()          && transaction deleted by user-> don't print
+         select radtrp
+         delete
+         skip
+         loop
+      endif
+
+      xbranch = radtrp->fbranch
+      xjdate = jdate (radtrp->fdate)
+      yrow = 0
+      ybuffer = space (132)
+      select ravin
+      seek substr(radtrp->fvin,1,8)+substr(radtrp->fvin,10,1)
+      if ravin->ffee = [01]
+         * 12/05/96: edc
+         * xexp = [04/01/]+substr(dtoc(xdate+radtrp->fmonth*30),7,2)
+         yy1 = val(substr(dtoc(xdate),7,2))
+         if substr(dtoc(xdate),1,2) = [12]    && for month = dec
+             yy1 = yy1 + 2
+         else
+             yy1 = yy1 + 1
+         endif
+         yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+         xexp = [04/01/]+strtran(str(yy1,2)," ","0")
+         * 04/16/96
+         if ravin->fmsrp > 29999
+            xmsrp = str(ravin->fmsrp,6,0)
+         else
+            xmsrp = str(int(ravin->fmsrp/1000),6,0)
+         endif
+      else
+         yy1 = val(substr(dtoc(xdate),7,2))
+         if substr(dtoc(xdate),1,2) $ [10,11,12]    && for month = oct,nov,dec
+             yy1 = yy1 + 2
+         else
+             yy1 = yy1 + 1
+         endif
+         yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+         xexp = [02/28/]+strtran(str(yy1,2)," ","0")
+         * 09.17.97
+         if ravin->fmsrp > 29999
+            xmsrp = str(ravin->fmsrp,6,0)
+         elseif ravin->fmsrp > 10000
+            xmsrp = str(int(ravin->fmsrp/1000),6,0)
+         else
+            xmsrp = str(ravin->fmsrp,6,0)
+         endif
+         *
+      endif
+
+      * print form uses rabody
+      select rabody
+      seek ravin->fstyle
+
+      * "1" should be station id
+      xid = radtrp->fclerk+"1"+xjdate+xbranch+radtrp->fseq
+      xseq = xbranch+xjdate+radtrp->fseq
+      *
+      select raform
+      seek str (xformno, 2) + xtyp
+      do while .not. eof () .and. ffrmno = xformno .and. ffrmtyp = xtyp
+         do while frow > yrow
+            ? trim (ybuffer)
+            ybuffer = space (132)
+            yrow = yrow + 1
+         enddo
+
+         yfld = ffield
+         ypict = trim (fpict)
+         yfld = transform (&yfld, ypict)
+         ybuffer = stuff (ybuffer, fcol + 1, len (yfld), yfld)
+         skip
+      enddo
+      ? trim (ybuffer)
+      eject
+      select radtrp
+      delete
+      skip
+   enddo
+end
+set print off
+set printer to
+set console on
+set device to screen
+set filter to
+close data
+f_valid (.f., "Process Completed...")
+
+

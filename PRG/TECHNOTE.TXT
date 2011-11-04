@@ -1,0 +1,41 @@
+* Field extract from TR-11 image from CVMS 
+
+   l_fowner = ""
+   l_fplate = strtran(substr(field,24,7)," ","")      && 02.17.05
+   l_fyear = substr(field,2,2)
+   l_fmake = substr(field,7,7)
+   l_fstyle = substr(field,21,10)
+   l_fstyle = substr(strtran(alltrim(l_fstyle),"/",""),1,2)
+   l_freg = val(alltrim(substr(field,33,7)))
+   l_fvin = substr(field,2,17)
+   l_fmsrp = alltrim(substr(field,21,7))
+   l_ftitle = val(alltrim(substr(field,33,7)))
+   l_ftfee =val(alltrim(substr(field,33,7)))
+      y1 = substr(field,6,3)               && garage code
+      y2 = substr(field,12,7)               && garage code
+      y3 = substr(field,24,3)              && rep code
+      l_fref = y1 + [ ] + y2 + [ ] + y3
+      l_fref = y1 + [ ] + y2 + [ ] + y3
+      l_fowner = "FORD MOTOR COMPANY"      && default for TR11D
+   l_fcontrol = substr(field,29,4)         && control # 9999
+   l_fctr2 = alltrim(substr(field,35,5))   && date MM/DD
+      * define faction
+      if l_freg = 0 .and. l_ftfee = 0 .and. l_ftitle > 0
+         l_faction = [1]
+      elseif l_freg > 0 .and. l_ftfee = 0 .and. l_ftitle > 0 .and. empty(l_fplate)
+         l_faction = [2]
+      elseif l_freg = 0 .and. l_ftfee > 0 .and. l_ftitle > 0
+         l_faction = [3]
+      elseif l_freg > 0 .and. l_ftfee = 0 .and. l_ftitle > 0 .and. .not.empty(l_fplate)
+         l_faction = [4]
+      elseif l_freg > 0 .and. l_ftfee = 0 .and. l_ftitle = 0 .and. empty(l_fplate)
+         l_faction = [5]
+      elseif l_freg > 0 .and. l_ftfee = 0 .and. l_ftitle = 0 .and. .not.empty(l_fplate)
+         l_faction = [6]
+      elseif l_freg = 0 .and. l_ftfee > 0 .and. l_ftitle = 0
+         l_faction = [7]
+      elseif l_freg > 0 .and. .not.empty(l_fplate)
+         l_faction = [9]
+      else
+         l_faction = [ ]
+      endif

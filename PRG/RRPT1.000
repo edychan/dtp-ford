@@ -1,0 +1,224 @@
+*************************************
+* dtp - print computer form
+*
+*
+* 09/11/96: add 10th digit (model year) to vin chart
+* 09.17.97: print msrp for pickup/van weigh < 5000 lb
+*
+*************************************
+f_clrscn ("DTP - REPRINT FORM TR11/TR11-D/TR11-T")
+private xformno, yrow, ybuffer, yfld, ypict, ysel, xmsrp
+
+f_box (01, 02, 10, 78)
+@ 02, 04 say "Branch #......"
+@ 03, 04 say "Date.........."
+@ 04, 04 say "Starting......"
+@ 05, 04 say "Ending........"
+@ 06, 04 say "Printer.......      [LPT1/LPT2/LPT3]"
+@ 07, 04 say "Form..........      [1]-TR11 "
+@ 08, 04 say "                    [2]-TR11-D"
+@ 09, 04 say "                    [3]-TR11-T"
+f_use ("radtrh")
+
+xmsrp = []
+xloc = space (3)
+xbranch = space (3)
+xdate = date()
+xstart = 0
+xend = 0
+xprt = [LPT3]
+xtr11 = [1]
+do while .t.
+   @ 02, 19 get xbranch pict "999" valid f_valid (rrpt1a ())
+   @ 03, 19 get xdate 
+   @ 04, 19 get xstart pict "9999" valid f_valid (xstart >= 0)
+   @ 05, 19 get xend pict "9999" valid f_valid (xend >= xstart)
+   @ 06, 19 get xprt pict "!!!!" valid f_valid (xprt $ "LPT1;LPT2;LPT3")
+   @ 07, 19 get xtr11 pict "9" valid f_valid (xtr11 $ "1;2;3")
+   if f_rd () = 27
+      close data
+      return
+   endif
+   yret = f_confirm ("[C]ontinue  [E]dit  [Q]uit ","CEQ")
+   if yret = "C"
+      select radtrh
+      set softseek on
+      seek xbranch+dtos(xdate)
+      set softseek off
+      if eof () .or. radtrh->fdate <> xdate
+         f_valid (.f., "No transaction to be printed...") 
+         loop
+      else
+         exit
+      endif
+   elseif yret = "Q"
+      close data
+      return
+   endif
+enddo
+
+* print routine
+if f_popup ("Press <Enter> to Begin or <Esc> to Stop Printing...", .t.) = 27
+   close data
+   return
+endif
+* set filter
+xformno = 1           && default form # for tr11 & tr11d
+xtyp = "R"            && reprint
+
+select radtrh
+do case
+case xtr11 = [1]
+   set filter to ftr11 = .t. .and. upper(substr(radtrh->fref,8,1)) <> "T"
+case xtr11 = [2]
+   set filter to ftr11 = .f. .and. upper(substr(radtrh->fref,8,1)) <> "T"
+case xtr11 = [3]
+   xformno = 3           && form # for tr11-t
+   set filter to upper(substr(radtrh->fref,8,1)) = "T"
+endcase
+
+f_popup ("Please Wait While Printing...")
+
+* set up transaction table
+private ydesc [9]
+
+ydesc [1] = "Original Title Only"
+ydesc [2] = "Original Title/Original Plate"
+ydesc [3] = "Original Title/Transfer Plate"
+ydesc [4] = "Original Title/Renewal-Transfer"
+ydesc [5] = "Original Plate Only"
+ydesc [6] = "Renewal Plate Only"
+ydesc [7] = "Transfer Plate Only"
+ydesc [8] = "                   "
+ydesc [9] = "Renewal-Transfer Plate Only"
+
+* set up condition
+if xstart = 0
+   xcond = ".t."
+else
+   xcond = "val(radtrh->fseq) >= xstart .and. val(radtrh->fseq) <= xend"
+endif
+
+y1 = dtoc (xdate)
+xfd = substr(y1,1,2)+substr(y1,4,2)+substr(y1,7,2)
+xjdate = jdate (xdate)
+
+f_use ("raform")
+f_use ("rabody")
+f_use ("ravin")
+select radtrh
+set softseek on
+seek xbranch+dtos(xdate)+strtran(str(xstart,4,0)," ","0")
+set softseek off
+set console off
+set print on
+set printer to &xprt
+yfrmlg = "chr(27)+chr(65)+chr(12)+chr(27)+chr(67)+chr(66)"
+?? &yfrmlg
+begin sequence
+   do while .not. eof () .and. radtrh->fbranch = xbranch .and.   ;
+      radtrh->fdate = xdate .and. &xcond
+      key = inkey ()
+      if key = 27
+         set console on
+         set print off
+         if f_confirm ("Do you want to quit ? ", "YN") = "N"
+            set console off
+            set print on
+         else
+            exit
+         endif
+      endif
+      * setprc (0, 0)
+      yrow = 0
+      ybuffer = space (132)
+      select ravin
+      seek substr(radtrh->fvin,1,8)+substr(radtrh->fvin,10,1)
+      if ravin->ffee = [01]
+         * 12/04/96: edc
+         * xexp = [04/01/]+substr(dtoc(xdate+radtrh->fmonth*30),7,2)
+         yy1 = val(substr(dtoc(xdate),7,2))
+         if substr(dtoc(xdate),1,2) = [12]    && for month = dec
+             yy1 = yy1 + 2
+         else
+             yy1 = yy1 + 1
+         endif
+         yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+         xexp = [04/01/]+strtran(str(yy1,2)," ","0")
+         * 04/16/96
+         if ravin->fmsrp > 29999
+            xmsrp = str(ravin->fmsrp,6,0)
+         else
+            xmsrp = str(int(ravin->fmsrp/1000),6,0)
+         endif
+      else
+         yy1 = val(substr(dtoc(xdate),7,2))
+         if substr(dtoc(xdate),1,2) $ [10,11,12]    && for month = oct,nov,dec
+             yy1 = yy1 + 2
+         else
+             yy1 = yy1 + 1
+         endif
+         yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+         xexp = [02/28/]+strtran(str(yy1,2)," ","0")
+         * 09.17.97
+         if ravin->fmsrp > 29999
+            xmsrp = str(ravin->fmsrp,6,0)
+         elseif ravin->fmsrp > 10000
+            xmsrp = str(int(ravin->fmsrp/1000),6,0)
+         else
+            xmsrp = str(ravin->fmsrp,6,0)
+         endif
+         *
+      endif
+
+      * print form uses rabody
+      select rabody
+      seek ravin->fstyle
+
+      * "1" should be station id
+      xid = radtrh->fclerk+"1"+xjdate+xbranch+radtrh->fseq
+      xseq = xbranch+xjdate+radtrh->fseq
+      *
+      select raform
+      seek str (xformno, 2) + xtyp
+      do while .not. eof () .and. ffrmno = xformno .and. ffrmtyp = xtyp
+         do while frow > yrow
+            ? trim (ybuffer)
+            ybuffer = space (132)
+            yrow = yrow + 1
+         enddo
+
+         yfld = ffield
+         ypict = trim (fpict)
+         yfld = transform (&yfld, ypict)
+         ybuffer = stuff (ybuffer, fcol + 1, len (yfld), yfld)
+         skip
+      enddo
+      ? trim (ybuffer)
+      eject
+      select radtrh
+      skip
+   enddo
+end
+set print off
+set printer to
+set console on
+set device to screen
+
+set filter to
+close data
+f_valid (.f., "Process Completed...")
+
+*****************************************
+function rrpt1a
+
+f_use ("ractr")
+locate for fbranch = xbranch
+if eof ()
+   return .f.
+else
+   return .t.
+endif
+
+
+

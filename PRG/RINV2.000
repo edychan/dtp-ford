@@ -1,0 +1,134 @@
+* **********************
+* load plate inventory
+*
+* 12.01.04: new passenger AAA9999
+* 10.30.06: new commercial AA99999
+**************************
+private  y1, y2, ytype, ypre, ysuf, ydate, ystate, yret
+
+f_clrscn ("DTP/MI - License Plate Inventory Maintenance")
+f_box (02, 05, 11, 65, "Load Plate Inventory")
+ytype = " "
+@ 03, 07 say "Passenger/Commerical..... "  
+@ 03, 33 get ytype pict "!" valid f_valid (ytype $ "P;C",  ;
+                    "Enter [P] for Passenger or [C] for Commercial")
+if f_rd () = 27
+   return
+endif
+ypre = "   "
+ysuf = "  "
+y1 = 0
+y2 = 0
+yswitch = " "
+ydate = date()
+ystate = [MI]
+yadded = 0.00
+if ytype = "P"  
+   ydigit = 0
+   @ 04, 07 say "Plate Prefix............. "
+   @ 05, 07 say "Number of Digits......... "
+   @ 06, 07 say "Starting Number.......... "
+   @ 07, 07 say "Ending Number............ "
+   @ 08, 07 say "Effective Date........... "
+   @ 09, 07 say "State.................... "
+   @ 10, 07 say "Added Fee................ "
+   do while .t.
+      @ 04, 33 get ypre pict "!!!" valid f_valid (.not. empty(ypre))
+      @ 05, 33 get ydigit pict "9" valid f_valid (ydigit>=2.and.ydigit<=4)
+      @ 06, 33 get y1 pict "9999" valid f_valid (y1 >= 0)
+      @ 07, 33 get y2 pict "9999" valid f_valid (y2 >= y1)
+      @ 08, 33 get ydate valid f_valid (.not. empty(ydate).and.f_y2k(@ydate))
+      @ 09, 33 get ystate pict "!!" valid f_valid (.not. empty(ystate))
+      @ 10, 33 get yadded pict "99.99" valid f_valid (yadded >= 0)
+      f_rd ()
+      yret = f_confirm ("[C]ontinue  [E]dit  [Q]uit", "CEQ")
+      if yret = "Q"
+         return
+      elseif yret = "E"
+        loop
+      endif
+      if empty(ypre) .or. y1 < 0 .or. y2 < y1
+         f_valid (.f., "Please re-enter...")
+         loop
+      endif
+      exit
+   enddo
+else
+   ydigit = 4
+   @ 04, 07 say "Number of Digits......... "
+   @ 05, 07 say "Starting Number.......... "
+   @ 06, 07 say "Ending Number............ "
+   @ 07, 07 say "[P]refix/[S]uffix........ " 
+   @ 08, 07 say "Effective Date........... "
+   @ 09, 07 say "State.................... "
+   @ 10, 07 say "Added Fee................ "
+   do while .t.
+      * 10.30.06: AA99999
+      @ 04, 33 get ydigit pict "9" valid f_valid (ydigit>=1.and.ydigit<=5)
+      @ 05, 33 get y1 pict "9999" valid f_valid (y1 >= 0)
+      @ 06, 33 get y2 pict "9999" valid f_valid (y2 >= y1)
+      @ 07, 33 get yswitch pict "!" valid f_valid (yswitch $ [P;S])
+      @ 07, 35 get ysuf pict "!!" valid f_valid (.not. empty(ysuf))
+      @ 08, 33 get ydate valid f_valid (.not. empty(ydate).and.f_y2k(@ydate))
+      @ 09, 33 get ystate pict "!!" valid f_valid (.not. empty(ystate))
+      @ 10, 33 get yadded pict "99.99" valid f_valid (yadded >= 0)
+      f_rd ()
+      yret = f_confirm ("[C]ontinue  [E]dit  [Q]uit", "CEQ")
+      if yret = "Q"
+         return
+      elseif yret = "E"
+        loop
+      endif
+      if empty(ysuf) .or. y1 < 0 .or. y2 < y1
+         f_valid (.f., "Please re-enter...")
+         loop
+      endif
+      exit
+   enddo
+endif
+ytype = if(ytype = "P", "01", "03")    && 01 ==> passenger
+                                       && 03 ==> commercial
+
+f_box (11, 05, 22, 65, "Processing Transaction")
+yrow = 11
+f_use ("raplate")
+for i = y1 to y2
+
+   if ytype = "01"
+      yplate = ypre + strtran(str(i,ydigit)," ","0")    && normal plate
+   else
+      if yswitch = "P"
+         yplate = ysuf + strtran(str(i,ydigit)," ","0")
+      else 
+         yplate = strtran(str(i,ydigit)," ","0") + ysuf
+      endif
+   endif
+
+   seek yplate
+   if eof ()
+      append blank
+   else
+      reclock ()
+   endif
+   replace fplate with yplate, fstate with ystate 
+   replace ftype with ytype, fstatus with "A"
+   replace fedate with ydate, fadded with yadded
+   commit
+   unlock
+
+   if yrow >= 21
+      scroll (12, 10, 21, 60, 1)
+   else
+      yrow = yrow + 1
+   endif
+   @ yrow, 13 say yplate
+   @ yrow, 23 say ystate
+   @ yrow, 27 say ytype
+   @ yrow, 37 say ydate
+
+next i
+
+select raplate
+use
+
+f_valid (.f., "Process completed...")

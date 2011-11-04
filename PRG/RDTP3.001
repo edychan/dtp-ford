@@ -1,0 +1,394 @@
+*
+* post batch
+*
+* important: no puncuation
+*            no decimal
+*
+* F01ID = [U ]                    && C2 MESSAGE ID  
+* F02VER = [1002]                 && C4 PROGRAM VERSION - use 1002 for testing
+* F03F1 = [00000]                 && C5 FILLER  
+* F04CLERK = [A]                  && C1 CLERK CODE  (A - Z) 
+* F05AREA = [R]                   && C1 AREA CODE (Always R)
+* F06RCODE =                      && C1 REG. TRAN CODE 
+* F07TCODE =                      && C1 TITLE TRAN CODE
+*                                 && 1 org title             ==> PA
+*                                 && 2 org title/org plate   ==> AA
+*                                 && 3 org title/tran plate  ==> GA
+*                                 && 4 org title/renew plate ==> HA
+*                                 && 5 org plate             ==> Ab
+*                                 && 6 renew plate           ==> Bb
+*                                 && 7 tran plate            ==> Gb
+*                                 && 8 replace plate/Tab     ==> Fb
+*                                 && 9 renew/tran plate      ==> Hb
+* F08JDATE = [G005]               && C4 JULIAN DATE   
+*                                 && G   ==> 1996  (skip I, O & Q)
+*                                 && 005 ==> Jan 05
+* F09BRANCH = [800]               && N3 BRANCH # (use 800 for testing)
+* F10SEQ = [0001]                 && N4 SEQ # 
+* F11F2 = [    ]                  && C4 FILLER 
+* F12ICODE = [13]                 && C2 INQUIRY CODE    
+* F13ITI = [N]                    && C1 INSTANT TITLE INDICATOR 
+* F14TAX = [0]                    && C1 TAX CODE (per chris johnson)
+                                  &&    [ ] for no tax
+                                  &&    [0] for sales tax
+                                  &&    [1] for use tax
+* F15TAXAMT = [00000000]          && N8 TAX PAID 
+* F16TITLE =                      && N8 TITLE FEE
+* F17LATE = [00000000]            && N8 LATE FEE 
+* F18VAF = [00000000]             && C8 VIN ASSIGNMENT FEE (not used)
+* F19REG =                        && N8 REGISTRATION FEE  
+* F20ADDED = [00000000]           && N8 ADDED FEE                       
+* F21PLATE =                      && C7 PLATE #                         
+* F22PPLATE =                     && C7 PREVIOUS PLATE #                
+* F23EXP =                        && N6 EXPIRATION DATE (MMDDYY)        
+* F24MONTH =                      && N2 NUMBER OF MONTHS                
+* F25TAB =                        && N7 TAB #                           
+* F26FEE =                        && N2 FEE CODE                        
+*                                 && 01 ==> Passenger
+*                                 && 03 ==> Commercial
+*                                 && 04 ==> Trailers
+*                                 && 05 ==> GVW plates
+*                                 && 06 ==> GVW plates (less than full year)
+* F27RPI = [N]                    && C1 REPLACEMENT PLATE INDICATOR     
+* F28RTI = [N]                    && C1 REPLACEMENT TAB INDICATOR       
+* F29COUNTY =                     && C2 COUNTY CODE                     
+* F30YEAR = [96]                  && C2 VEHICLE MODEL YEAR              
+* F31MAKE =                       && C12 MAKE                            
+* F32VIN =                        && C17 VIN                             
+* F33BODY =                       && C3 BODY STYLE                      
+* F34WFC =                        && N6 WEIGHT/FEE CATAGORY             
+* F35ORG = [   ]                  && N3 ORGANIZATIONAL CODE             
+* F36F3 = space (2)               && C2 FILLER                          
+* F37PTN = space (11)             && C11 PREVIOUS TITLE #                
+* F38F4 = space (31)              && C31 FILLER                          
+* F39ADDR =                       && C36 ADDRESS                         
+* F40CITY =                       && C19 CITY                            
+* F41STATE =                      && C2 STATE                           
+* F42ZIP =                        && C5 ZIP                             
+* F43COI = [C]                    && C13 DLN/COMPANY OWNED INDICATOR     
+* F44MODEL =  space(17)           && C17 MODEL (filled in by sos mainframe)
+* F45NAME =                       && C72 NAME                            
+* F46MI = [E]                     && C1 MILEAGE INDICATOR               
+*                                 && A ==> actual mileage
+*                                 && B ==> not actual mileage
+*                                 && C ==> over 99,999
+*                                 && E ==> exempt
+* F47AET = [K]                    && C1 AET EXEMPT CODE                 
+*                                 &&    K ==> New vehicle exemption
+* F48MLG = [000000]               && C6 MILEAGE                         
+* F491LIEN =                      && C36 1ST LIEN NAME                   
+* F501LFD =                       && C6 1ST LIEN FILING DATE (MMDDYY)   
+* F511ADDR =                      && C20 1ST LIEN ADDRESS                
+* F521CITY =                      && C19 1ST LIEN CITY                   
+* F531STATE =                     && C2 1ST LIEN STATE                  
+* F541ZIP =                       && C5 1ST LIEN ZIP                    
+* F552LIEN = space (36)           && C36 2ND LIEN NAME                   
+* F562LFD  = space (6)            && C6 2ND LIEN FILING DATE (MMDDYY)   
+* F572ADDR = space (20)           && C20 2ND LIEN ADDRESS                
+* F582CITY = space (19)           && C19 2ND LIEN CITY                   
+* F592STATE = space (2)           && C2 2ND LIEN STATE                  
+* F602ZIP = space (5)             && C5 2ND LIEN ZIP                    
+* F61HSI = [N]                    && C1 HANDICAP STICKER INDICATOR      
+* F62RTS = [Y]                    && C1 FULL RIGHTS TO SURVIVOR         
+* F63TEI = [Y]                    && C1 TAX EXEMPT INDICATOR            
+* F64TER = [Y]                    && C33 TAX EXEMPT REASON               
+* F65DLN = space (5)              && C5 DEALER #                        
+* F66MSRP = [00000000]            && N8 PURCHASE PRICE                  
+* 
+
+f_clrscn ("DTP/MI - Process Title/Registration Transactions to Transmit")
+f_use ("rasys")
+xpost = fpostdate                 && last posted date
+use
+
+f_box (01, 02, 04, 78)
+@ 02, 04 say "Branch #......"
+@ 02, 50 say "Last Posted on.... " + dtoc(xpost)
+@ 03, 04 say "Date.........."
+f_use ("radtr")
+xbranch = [800]
+xdate = date()
+
+do while .t.
+   @ 02, 19 get xbranch pict "999" valid f_valid(f_verify("raloc",1,xbranch))
+   @ 03, 19 get xdate valid f_valid(xdate > xpost,"Last posted on "+dtoc(xpost))
+   if f_rd () = 27
+      close data
+      return
+   endif
+   yret = f_confirm ("[C]ontinue  [E]dit  [Q]uit ","CEQ")
+   if yret = "C"
+      select radtr
+      set softseek on
+      seek xbranch+dtos(xdate)
+      set softseek off
+      if eof () .or. radtr->fdate <> xdate
+         f_valid (.f., "No transaction to be processed...") 
+         loop
+      else
+         exit
+      endif
+   elseif yret = "Q"
+      close data
+      return
+   endif
+enddo
+
+restore from (gmempath+"radtr") additive
+restore from (gmempath+"ratran") additive
+L_F01ID = [U ]                    && C2 MESSAGE ID  
+L_F02VER = [1002]                 && C4 PROGRAM VERSION - use 1002 for testing
+L_F03F1 = [00000]                 && C5 FILLER  
+L_F05AREA = [R]                   && C1 AREA CODE (Always R)
+L_F08JDATE = JDATE (XDATE)        && C4 JULIAN DATE   
+L_F11F2 = [    ]                  && C4 FILLER 
+L_F12ICODE = [13]                 && C2 INQUIRY CODE    
+L_F13ITI = [N]                    && C1 INSTANT TITLE INDICATOR 
+L_F14TAX = [0]                    && C1 TAX CODE per chris johnson
+L_F15TAXAMT = [00000000]          && N8 TAX PAID 
+L_F17LATE = [00000000]            && N8 LATE FEE 
+L_F18VAF = [00000000]             && C8 VIN ASSIGNMENT FEE (not used)
+L_F20ADDED = [00000000]           && N8 ADDED FEE                       
+L_F27RPI = [N]                    && C1 REPLACEMENT PLATE INDICATOR     
+L_F28RTI = [N]                    && C1 REPLACEMENT TAB INDICATOR       
+L_F35ORG = [   ]                  && N3 ORGANIZATIONAL CODE             
+L_F36F3 = space (2)               && C2 FILLER                          
+L_F37PTN = space (11)             && C11 PREVIOUS TITLE #                
+L_F38F4 = space (31)              && C31 FILLER                          
+L_F43COI = [C]                    && C13 DLN/COMPANY OWNED INDICATOR     
+L_F44MODEL = space (17)           && C17 filled in by sos mainframe
+L_F46MI = [E]                     && C1 MILEAGE INDICATOR               
+L_F47AET = [K]                    && C1 AET EXEMPT CODE                 
+L_F48MLG = [000000]               && C6 MILEAGE                         
+L_F61HSI = [N]                    && C1 HANDICAP STICKER INDICATOR      
+L_F62RTS = [Y]                    && C1 FULL RIGHTS TO SURVIVOR         
+L_F63TEI = [Y]                    && C1 TAX EXEMPT INDICATOR            
+L_F65DLN = space (5)              && C5 DEALER #                        
+L_F66MSRP = [00000000]            && N8 PURCHASE PRICE                  
+
+f_use ("raloc")
+seek xbranch
+L_F09BRANCH = FBRANCH             && N3 BRANCH # (use 800 for testing)
+L_F29COUNTY = FCOUNTY             && C2 COUNTY CODE                     
+L_F39ADDR = FCADDR                && C36 ADDRESS                         
+L_F40CITY = FCCITY                && C19 CITY                            
+L_F41STATE = FCSTATE              && C2 STATE                           
+L_F42ZIP = FCZIP                  && C5 ZIP                             
+L_F45NAME = FNAME                 && C72 NAME                            
+X1LIEN = FOWNER               && C36 1ST LIEN NAME                   
+YLFD = DTOC(XDATE)
+X1LFD = SUBSTR(YLFD,1,2)+SUBSTR(YLFD,4,2)+SUBSTR(YLFD,7,2)
+X1ADDR = FOADDR               && C20 1ST LIEN ADDRESS                
+X1CITY = FOCITY               && C19 1ST LIEN CITY                   
+X1STATE = FOSTATE             && C2 1ST LIEN STATE                  
+X1ZIP = FOZIP                 && C5 1ST LIEN ZIP                    
+L_F552LIEN = space (36)           && C36 2ND LIEN NAME                   
+L_F562LFD  = space (6)            && C6 2ND LIEN FILING DATE (MMDDYY)   
+L_F572ADDR = space (20)           && C20 2ND LIEN ADDRESS                
+L_F582CITY = space (19)           && C19 2ND LIEN CITY                   
+L_F592STATE = space (2)           && C2 2ND LIEN STATE                  
+L_F602ZIP = space (5)             && C5 2ND LIEN ZIP                    
+L_F64TER = FREASON                && C33 TAX EXEMPT REASON               
+
+f_box (6, 11, 22, 66, "Processing Transactions")
+yrow = 7
+
+f_use ("radtrh")
+f_use ("ravin")
+f_use ("raplate")
+f_use ("ravm")
+set excl on                && only one user can post at one time
+f_use ("ratran")
+pack
+set excl off
+
+yseq = 1
+select radtr
+set softseek on
+seek xbranch+dtos(xdate)
+set softseek off
+do while .not. eof () .and. fbranch = xbranch .and. fdate = xdate
+
+   @ yrow, 13 say fvin
+   @ yrow, 32 say faction
+   @ yrow, 35 say fplate
+   @ yrow, 45 say funit
+   @ yrow, 57 say str(ftotal,6,2) 
+   if yrow <= 20
+      yrow = yrow + 1
+   else
+      scroll (7, 13, 21, 64, 1)
+   endif
+   * lien holder info. is required for title application only
+   if faction $ [1;2;3;4]
+      L_F491LIEN = X1LIEN 
+      L_F501LFD = X1LFD   
+      L_F511ADDR = X1ADDR 
+      L_F521CITY = X1CITY 
+      L_F531STATE = X1STATE 
+      L_F541ZIP = X1ZIP     
+   else
+      L_F491LIEN = space(36) 
+      L_F501LFD = space(6)   
+      L_F511ADDR = space(20) 
+      L_F521CITY = space(19) 
+      L_F531STATE = space(2) 
+      L_F541ZIP = space(5)   
+   endif
+   do case
+   case faction = [1]
+      L_F06RCODE = [P]
+      L_F07TCODE = [A]
+   case faction = [2]
+      L_F06RCODE = [A]
+      L_F07TCODE = [A]
+   case faction = [3]
+      L_F06RCODE = [G]
+      L_F07TCODE = [A]
+   case faction = [4]
+      L_F06RCODE = [H]
+      L_F07TCODE = [A]
+   case faction = [5]
+      L_F06RCODE = [A]
+      L_F07TCODE = [ ]
+   case faction = [6]
+      L_F06RCODE = [B]
+      L_F07TCODE = [ ]
+   case faction = [7]
+      L_F06RCODE = [G]
+      L_F07TCODE = [ ]
+   *case faction =[8]
+   *   L_F06RCODE = [F]
+   *   L_F07TCODE = [ ]
+   case faction = [9]
+      L_F06RCODE = [H]
+      L_F07TCODE = [ ]
+   otherwise
+      L_F06RCODE = [ ]
+      L_F07TCODE = [ ]
+   endcase
+   L_F04CLERK = radtr->fclerk                  && C1 CLERK CODE  (A - Z) 
+   L_F10SEQ = strtran(str(yseq,4), " ", "0")
+   yseq = yseq + 1
+   L_F16TITLE = strtran(str(ftitle*100,8,0), " ", "0")
+   L_F19REG = strtran(str((freg+ftfee)*100,8,0), " ", "0")
+   L_F21PLATE = fplate
+   L_F22PPLATE = fpplate      
+   L_F25TAB = ftab 
+   L_F32VIN = fvin  
+   L_F24MONTH = strtran(str(radtr->fmonth,2,0)," ","0")
+   select ravin 
+   seek substr(radtr->fvin,1,9)
+   L_F26FEE = ravin->ffee        
+   L_F30YEAR = ravin->fyear
+   L_F31MAKE = ravin->fmake
+   L_F33BODY = ravin->fstyle
+   if ravin->ffee = [01]
+      L_F23EXP = [0401]+substr(dtoc(xdate+radtr->fmonth*30),7,2)
+      L_F34WFC = strtran(str(ravin->fmsrp/1000,6,0)," ","0")
+   else
+      yy1 = val(substr(dtoc(xdate),7,2))
+      if substr(dtoc(xdate),1,2) $ [10,11,12]    && for month = oct,nov,dec
+          yy1 = yy1 + 2
+      else
+          yy1 = yy1 + 1
+      endif
+      yy1 = if(yy1>99, yy1-100, yy1)             && for year 2000
+      L_F23EXP = [0228]+strtran(str(yy1,2)," ","0")
+      L_F34WFC = strtran(str(ravin->fmsrp,6,0)," ","0")
+   endif
+   * L_F44MODEL = ravin->fmodel
+
+   select ratran
+   append blank
+   f_replace ()
+   * update plate file
+   select raplate
+   seek radtr->fplate
+   if .not. eof ()
+      reclock ()
+      replace fvin with substr(radtr->fvin,10,8), fstatus with "U"
+      if .not. empty(radtr->ftab)
+         replace ftab with radtr->ftab
+      endif
+      if radtr->faction $ [2;4;5;6;9]
+         replace frenewal with ctod(substr(l_f23exp,1,2)+"/"+  ;
+                 substr(l_f23exp,3,2)+"/"+substr(l_f23exp,5,2))
+      endif
+      commit
+      unlock
+   endif
+   * update ravm
+   select ravm
+   seek substr(radtr->fvin,10,8)
+   if .not. eof ()
+      reclock ()
+      replace funit with radtr->funit 
+      if radtr->faction $ [1;2;3;4]
+         replace fdate1 with xdate
+      endif
+      if radtr->faction $ [3;7;9]
+         replace fpplate with ravm->fplate
+      endif
+      if radtr->faction $ [2;4;6]
+         replace fplate with radtr->fplate
+      endif
+   endif
+   * save to history
+   select radtr
+   f_retrieve ()
+   select radtrh
+   append blank
+   l_fseq = l_f10seq
+   f_replace ()
+
+   * clear & skip record
+   select radtr
+   if f_clrskip () = 0
+      exit
+   endif
+enddo
+
+**  create send file
+select ratran
+go top
+yfil = "f:\dtp\comm\"+l_f09branch+l_f08jdate+".txt"
+f_popup ("Creating Send File "+l_f09branch+l_f08jdate+".txt")
+
+* copy to &yfil sdf
+
+set device to print
+set printer to &yfil
+yln = 0
+do while .not. eof ()
+   @yln, 00 say F01ID + F02VER + F03F1 + F04CLERK + F05AREA + F06RCODE   + ;
+    F07TCODE + F08JDATE + F09BRANCH + F10SEQ + F11F2 + F12ICODE + F13ITI + ;
+    F14TAX + F15TAXAMT + F16TITLE + F17LATE + F18VAF + F19REG + F20ADDED + ;
+    F21PLATE + F22PPLATE + F23EXP + F24MONTH + F25TAB + F26FEE + F27RPI  + ;
+    F28RTI + F29COUNTY + F30YEAR + F31MAKE + F32VIN + F33BODY + F34WFC   + ;
+    F35ORG + F36F3 + F37PTN + F38F4 + F39ADDR + F40CITY + F41STATE       + ;
+    F42ZIP + F43COI + F44MODEL + F45NAME + F46MI + F47AET + F48MLG       + ;
+    F491LIEN + F501LFD + F511ADDR + F521CITY + F531STATE + F541ZIP       + ;
+    F552LIEN + F562LFD  + F572ADDR + F582CITY + F592STATE + F602ZIP      + ;
+    F61HSI + F62RTS + F63TEI + F64TER + F65DLN + F66MSRP 
+   yln = yln + 1
+   delete
+   skip
+enddo
+set device to screen
+set printer to
+set console on
+set print off
+
+* update post date
+f_use ("rasys")
+go top
+reclock ()
+replace fpostdate with xdate
+unlock
+commit
+
+f_valid (.f., "Process Completed...")
+close data
+
+
